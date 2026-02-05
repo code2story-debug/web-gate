@@ -1,0 +1,108 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+serve(async (req) => {
+  try {
+    const payload = await req.json();
+    console.log("1. Database triggered! Data received:", payload);
+
+    // Handle both webhook format and direct record format
+    const record = payload.record || payload;
+    const userEmail = record.email;
+
+    if (!userEmail) {
+      throw new Error("No email found in the database record!");
+    }
+
+    if (!RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY environment variable is not set!");
+    }
+
+    // Validate and clean email address
+    const cleanEmail = userEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      throw new Error(`Invalid email address: ${userEmail}`);
+    }
+
+    console.log("2. Sending welcome email to:", cleanEmail);
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Code2Story <hello@code2story.com>",
+        to: [cleanEmail], // Use cleaned email
+        subject: "🚀 You're in: The gate is officially open.",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #000000; color: #ffffff;">
+            <h1 style="color: #06b6d4; text-align: center; font-size: 28px; margin-bottom: 20px;">
+              THE GATE IS OPENING
+            </h1>
+            <p style="color: #a1a1aa; font-size: 16px; line-height: 1.6; text-align: center; margin-bottom: 30px;">
+              Stop coding. Start orchestrating. Volume 3 is the new era.
+            </p>
+            <div style="background-color: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <p style="color: #06b6d4; font-size: 18px; text-align: center; margin: 0;">
+                Welcome, Orchestrator.
+              </p>
+              <p style="color: #a1a1aa; font-size: 14px; text-align: center; margin-top: 10px;">
+                You are on the list. Watch your inbox for updates.
+              </p>
+            </div>
+            <p style="color: #71717a; font-size: 12px; text-align: center; margin-top: 30px;">
+              — Code2Story Team
+            </p>
+          </div>
+        `,
+        text: `THE GATE IS OPENING
+
+Stop coding. Start orchestrating. Volume 3 is the new era.
+
+Welcome, Orchestrator.
+
+You are on the list. Watch your inbox for updates.
+
+— Code2Story Team`,
+      }),
+    });
+
+    const responseData = await res.json();
+    console.log("3. Resend API Response Status:", res.status);
+    console.log("4. Resend API Response:", responseData);
+
+    if (!res.ok) {
+      throw new Error(
+        `Resend API error: ${responseData.message || JSON.stringify(responseData)}`
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Welcome email sent successfully",
+        emailId: responseData.id,
+        recipient: cleanEmail,
+      }),
+      { 
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("❌ ERROR:", error.message);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        success: false,
+      }),
+      { 
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+});

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,15 +12,53 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(circle at center, rgba(34, 211, 238, 0.1) 0%, #000 80%);
+  background-color: #000000;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(34, 211, 238, 0.1) 0%, transparent 80%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Gate glow effect */
+@keyframes gateGlow {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.gate-glow {
+  animation: gateGlow 4s ease-in-out infinite;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
